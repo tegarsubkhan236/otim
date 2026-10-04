@@ -1,0 +1,4 @@
+import { CellularDataPage } from "@/app/_components/cellular-data-page";
+import { CellularForm } from "@/app/_components/cellular-form";
+import { salesAllocations } from "@/app/_data/cellular-dummy-data";
+export default function CellularSalesPage() { return <CellularDataPage eyebrow="Selular / Master / Sales" title="Sales" description="Kelola stok yang dialokasikan dari warehouse kepada setiap sales." stats={[{ label: "Sales aktif", value: "48", detail: "Menerima alokasi" }, { label: "Stok sales", value: "186 unit", detail: "Device dan SIM" }, { label: "Terjual hari ini", value: "32 unit", detail: "Melalui Sales Order" }]} rows={salesAllocations.map((allocation) => ({ primary: allocation.sales, secondary: `${allocation.item} · ${allocation.identifier}`, value: `${allocation.quantity} unit`, status: allocation.status }))}><CellularForm kind="sales" /></CellularDataPage>; }

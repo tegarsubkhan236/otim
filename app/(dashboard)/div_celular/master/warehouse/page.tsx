@@ -1,0 +1,3 @@
+import { CellularDataPage } from "@/app/_components/cellular-data-page";
+import { warehouseItems } from "@/app/_data/cellular-dummy-data";
+export default function CellularWarehousePage() { return <CellularDataPage eyebrow="Selular / Master / Warehouse" title="Warehouse" description="Kelola stok device, SIM, dan accessory yang tersedia di warehouse." stats={[{ label: "Available", value: "282 unit", detail: "Siap didistribusikan" }, { label: "Reserved", value: "38 unit", detail: "Untuk outlet dan sales" }, { label: "In transit", value: "24 unit", detail: "Sedang dikirim" }]} rows={warehouseItems.map((item) => ({ primary: item.name, secondary: `${item.sku} · ${item.identifier}`, value: `${item.quantity} unit · ${item.location}`, status: item.status }))} />; }

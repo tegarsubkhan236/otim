@@ -1,0 +1,47 @@
+"use client";
+
+import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { cashEntries, payments, type CashEntry } from "@/app/_data/cellular-dummy-data";
+
+type PaymentMode = "transactions" | "income" | "expenses" | "cashflow" | "refunds" | "reconciliation";
+const money = (value: number) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(value);
+const titles: Record<PaymentMode, { title: string; description: string }> = {
+  transactions: { title: "Payment Transactions", description: "Pembayaran dari Sales Order dan status settlement." },
+  income: { title: "Income", description: "Arus kas masuk dari Sales Order dan pelunasan piutang." },
+  expenses: { title: "Expenses", description: "Arus kas keluar untuk supplier dan biaya operasional." },
+  cashflow: { title: "Cashflow", description: "Ringkasan saldo, pemasukan, pengeluaran, dan net cashflow." },
+  refunds: { title: "Refunds", description: "Pengajuan refund dan reversal payment tanpa menghapus histori." },
+  reconciliation: { title: "Reconciliation", description: "Pencocokan amount, reference, account, settlement, dan bukti transaksi." },
+};
+
+export function PaymentLedgerPage({ mode }: { mode: PaymentMode }) {
+  const [query, setQuery] = useState("");
+  const [entries, setEntries] = useState<CashEntry[]>(cashEntries);
+  const [notice, setNotice] = useState("");
+  const title = titles[mode];
+  const visibleEntries = entries.filter((entry) => (mode === "income" ? entry.type === "Income" : mode === "expenses" ? entry.type === "Expense" : true)).filter((entry) => `${entry.id} ${entry.category} ${entry.party} ${entry.reference} ${entry.status}`.toLowerCase().includes(query.toLowerCase()));
+  const totalIncome = entries.filter((entry) => entry.type === "Income" && entry.status === "Received").reduce((sum, entry) => sum + entry.amount, 0);
+  const totalExpense = entries.filter((entry) => entry.type === "Expense" && entry.status === "Paid").reduce((sum, entry) => sum + entry.amount, 0);
+
+  function approve(entryId: string) {
+    setEntries((current) => current.map((entry) => entry.id === entryId ? { ...entry, status: entry.type === "Income" ? "Received" : "Paid" } : entry));
+    setNotice(`${entryId} berhasil diproses sebagai transaksi realisasi. (Dummy)`);
+  }
+
+  if (mode === "cashflow") return <div className="mx-auto max-w-[1280px] space-y-8"><Header title={title.title} description={title.description} /><section className="grid gap-4 md:grid-cols-4"><Metric title="Saldo awal" value={money(125000000)} detail="Periode berjalan" /><Metric title="Income diterima" value={money(totalIncome)} detail="Cash in" /><Metric title="Expense dibayar" value={money(totalExpense)} detail="Cash out" /><Metric title="Net cashflow" value={money(totalIncome - totalExpense)} detail="Income - expense" /></section><CashflowTable entries={entries} /></div>;
+
+  if (mode === "transactions" || mode === "refunds" || mode === "reconciliation") return <div className="mx-auto max-w-[1280px] space-y-8"><Header title={title.title} description={title.description} /><Card><CardHeader className="gap-4 sm:flex-row sm:items-center sm:justify-between"><div><CardTitle>{mode === "transactions" ? "Daftar pembayaran" : mode === "refunds" ? "Daftar refund" : "Daftar rekonsiliasi"}</CardTitle><CardDescription>Data payment terhubung ke snapshot Sales Order.</CardDescription></div><Input className="w-full bg-white sm:max-w-xs" onChange={(event) => setQuery(event.target.value)} placeholder="Cari payment, order, reference..." value={query} /></CardHeader><CardContent className="p-0"><PaymentTable mode={mode} query={query} onAction={(paymentId) => setNotice(`${paymentId} diproses. (Dummy)`)} /></CardContent></Card>{notice && <Notice text={notice} />}</div>;
+
+  return <div className="mx-auto max-w-[1280px] space-y-8"><Header title={title.title} description={title.description} /><Card><CardHeader className="gap-4 sm:flex-row sm:items-center sm:justify-between"><div><CardTitle>{mode === "income" ? "Pemasukan" : "Pengeluaran"}</CardTitle><CardDescription>Entry yang masih pending tidak dihitung sebagai saldo realisasi.</CardDescription></div><Input className="w-full bg-white sm:max-w-xs" onChange={(event) => setQuery(event.target.value)} placeholder="Cari kategori, party, reference..." value={query} /></CardHeader><CardContent className="p-0"><Table><TableHeader><TableRow><TableHead>Entry</TableHead><TableHead>Kategori / Party</TableHead><TableHead>Amount</TableHead><TableHead>Account</TableHead><TableHead>Status</TableHead><TableHead>Action</TableHead></TableRow></TableHeader><TableBody>{visibleEntries.map((entry) => <TableRow key={entry.id}><TableCell className="font-semibold text-foreground">{entry.id}<div className="text-xs font-normal text-muted-foreground">{entry.date}</div></TableCell><TableCell>{entry.category}<div className="text-xs text-muted-foreground">{entry.party}</div></TableCell><TableCell className={entry.type === "Income" ? "font-semibold text-emerald-700" : "font-semibold text-red-700"}>{entry.type === "Income" ? "+" : "-"}{money(entry.amount)}</TableCell><TableCell>{entry.account}<div className="text-xs text-muted-foreground">{entry.reference}</div></TableCell><TableCell><Badge variant="outline" className="border-[#e8cf7d] bg-secondary text-[#8b6d13]">{entry.status}</Badge></TableCell><TableCell>{entry.status === "Pending Approval" && <Button onClick={() => approve(entry.id)} size="sm">Approve</Button>}</TableCell></TableRow>)}</TableBody></Table></CardContent></Card>{notice && <Notice text={notice} />}</div>;
+}
+
+function Header({ title, description }: { title: string; description: string }) { return <div><p className="text-sm font-medium text-primary">Finance / Payments</p><h1 className="mt-1 text-3xl font-bold tracking-tight text-foreground">{title}</h1><p className="mt-2 text-sm text-muted-foreground">{description}</p></div>; }
+function Metric({ title, value, detail }: { title: string; value: string; detail: string }) { return <Card><CardContent className="p-5"><p className="text-sm text-muted-foreground">{title}</p><p className="mt-2 text-2xl font-bold text-foreground">{value}</p><p className="mt-2 text-xs font-medium text-[#b28a19]">{detail}</p></CardContent></Card>; }
+function Notice({ text }: { text: string }) { return <p className="rounded-xl bg-secondary px-4 py-3 text-sm font-medium text-secondary-foreground" role="status">{text}</p>; }
+function CashflowTable({ entries }: { entries: CashEntry[] }) { return <Card><CardHeader><CardTitle>Cashflow entries</CardTitle><CardDescription>Hanya Received dan Paid yang masuk ke net cashflow.</CardDescription></CardHeader><CardContent className="p-0"><Table><TableHeader><TableRow><TableHead>Tanggal</TableHead><TableHead>Entry</TableHead><TableHead>Tipe</TableHead><TableHead>Amount</TableHead><TableHead>Status</TableHead></TableRow></TableHeader><TableBody>{entries.map((entry) => <TableRow key={entry.id}><TableCell>{entry.date}</TableCell><TableCell className="font-semibold text-foreground">{entry.category}<div className="text-xs font-normal text-muted-foreground">{entry.party}</div></TableCell><TableCell>{entry.type}</TableCell><TableCell>{entry.type === "Income" ? "+" : "-"}{money(entry.amount)}</TableCell><TableCell><Badge variant="outline" className="border-[#e8cf7d] bg-secondary text-[#8b6d13]">{entry.status}</Badge></TableCell></TableRow>)}</TableBody></Table></CardContent></Card>; }
+function PaymentTable({ mode, query, onAction }: { mode: PaymentMode; query: string; onAction: (id: string) => void }) { const rows = payments.filter((payment) => (mode === "refunds" ? payment.status === "Paid" || payment.status === "Refunded" : mode === "reconciliation" ? payment.settlement !== "Reconciled" : true)).filter((payment) => `${payment.id} ${payment.orderId} ${payment.customer} ${payment.reference} ${payment.status}`.toLowerCase().includes(query.toLowerCase())); return <Table><TableHeader><TableRow><TableHead>Payment</TableHead><TableHead>Order / Customer</TableHead><TableHead>Method</TableHead><TableHead>Amount</TableHead><TableHead>Status</TableHead><TableHead>Action</TableHead></TableRow></TableHeader><TableBody>{rows.map((payment) => <TableRow key={payment.id}><TableCell className="font-semibold text-foreground">{payment.id}<div className="text-xs font-normal text-muted-foreground">{payment.reference}</div></TableCell><TableCell>{payment.orderId}<div className="text-xs text-muted-foreground">{payment.customer}</div></TableCell><TableCell>{payment.method}</TableCell><TableCell>{money(payment.amount)}<div className="text-xs text-muted-foreground">of {money(payment.total)}</div></TableCell><TableCell><Badge variant="outline" className="border-[#e8cf7d] bg-secondary text-[#8b6d13]">{payment.status}</Badge><div className="mt-1 text-xs text-muted-foreground">{payment.settlement}</div></TableCell><TableCell><Button onClick={() => onAction(payment.id)} size="sm" variant="outline">{mode === "refunds" ? "Refund" : mode === "reconciliation" ? "Reconcile" : "Detail"}</Button></TableCell></TableRow>)}</TableBody></Table>; }

@@ -1,0 +1,5 @@
+import { CellularDataPage } from "@/app/_components/cellular-data-page";
+import { CellularForm } from "@/app/_components/cellular-form";
+import { SerialNumberPanel } from "@/app/_components/serial-number-panel";
+import { purchaseOrders } from "@/app/_data/cellular-dummy-data";
+export default function CellularReceiptsPage() { return <CellularDataPage eyebrow="Selular / Inventory / Warehouse" title="Receiving" description="Terima barang dari PO dan masukkan stok yang lolos pemeriksaan ke warehouse." stats={[{ label: "Menunggu check", value: "6", detail: "Penerimaan hari ini" }, { label: "Diterima bulan ini", value: "842", detail: "Unit masuk warehouse" }, { label: "Partial receipt", value: "3", detail: "Perlu follow up supplier" }]} rows={purchaseOrders.map((po) => ({ primary: `RCV-${po.id.slice(-4)}`, secondary: `${po.id} · ${po.supplier}`, value: po.status === "Completed" ? "100% received" : "Partial", status: po.status === "Completed" ? "Accepted" : "Pending Check" }))}><CellularForm kind="receipt" /><SerialNumberPanel mode="receiving" /></CellularDataPage>; }

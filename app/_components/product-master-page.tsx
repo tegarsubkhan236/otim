@@ -1,0 +1,33 @@
+"use client";
+
+import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { productCosts, products as initialProducts, sellingPrices } from "@/app/_data/cellular-dummy-data";
+
+const money = (value: number) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(value);
+
+export function ProductMasterPage() {
+  const [products, setProducts] = useState(initialProducts);
+  const [notice, setNotice] = useState("");
+  const [sku, setSku] = useState("");
+  const [name, setName] = useState("");
+  const [category, setCategory] = useState("Device");
+  const [hpp, setHpp] = useState("");
+  const [price, setPrice] = useState("");
+
+  function addProduct() {
+    if (!sku || !name || !hpp || !price) { setNotice("Lengkapi SKU, nama, HPP, dan harga jual."); return; }
+    if (products.some((product) => product.sku === sku)) { setNotice("SKU sudah terdaftar."); return; }
+    setProducts((current) => [...current, { sku, name, category: category as "Device" | "SIM" | "Accessory", identifier: category === "Device" ? "IMEI" : category === "SIM" ? "ICCID" : "Serial", unit: "Unit", hpp: Number(hpp), status: "Active" }]);
+    setNotice(`Product ${sku} dibuat dengan HPP ${money(Number(hpp))} dan harga jual ${money(Number(price))}. (Dummy)`);
+    setSku(""); setName(""); setHpp(""); setPrice("");
+  }
+
+  return <div className="mx-auto max-w-[1280px] space-y-8"><div><p className="text-sm font-medium text-primary">Master / Products</p><h1 className="mt-1 text-3xl font-bold tracking-tight text-foreground">Products & Pricing</h1><p className="mt-2 text-sm text-muted-foreground">Kelola product, histori HPP, dan harga jual dinamis OTIM.</p></div><div className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]"><Card><CardHeader><CardTitle>Tambah product</CardTitle><CardDescription>HPP dan harga jual awal menjadi versi draft dummy.</CardDescription></CardHeader><CardContent className="space-y-4"><div><Label className="mb-2 text-foreground" htmlFor="product-sku">SKU *</Label><Input className="bg-white" id="product-sku" onChange={(event) => setSku(event.target.value.toUpperCase())} placeholder="DEV-A55" value={sku} /></div><div><Label className="mb-2 text-foreground" htmlFor="product-name">Nama product *</Label><Input className="bg-white" id="product-name" onChange={(event) => setName(event.target.value)} placeholder="OTIM Phone A55" value={name} /></div><div><Label className="mb-2 text-foreground">Kategori *</Label><Select onValueChange={(value) => setCategory(value ?? "Device")} value={category}><SelectTrigger className="bg-white text-foreground"><SelectValue /></SelectTrigger><SelectContent><SelectItem className="text-foreground" value="Device">Device</SelectItem><SelectItem className="text-foreground" value="SIM">SIM</SelectItem><SelectItem className="text-foreground" value="Accessory">Accessory</SelectItem></SelectContent></Select></div><div className="grid gap-4 sm:grid-cols-2"><div><Label className="mb-2 text-foreground" htmlFor="product-hpp">HPP *</Label><Input className="bg-white" id="product-hpp" min="0" onChange={(event) => setHpp(event.target.value)} placeholder="2850000" type="number" value={hpp} /></div><div><Label className="mb-2 text-foreground" htmlFor="product-price">Harga jual *</Label><Input className="bg-white" id="product-price" min="0" onChange={(event) => setPrice(event.target.value)} placeholder="3299000" type="number" value={price} /></div></div><Button onClick={addProduct} type="button">Simpan product</Button>{notice && <p className="rounded-xl bg-secondary px-4 py-3 text-sm font-medium text-secondary-foreground" role="status">{notice}</p>}</CardContent></Card><Card><CardHeader><CardTitle>Price rule aktif</CardTitle><CardDescription>Harga dapat berbeda berdasarkan channel dan pemilik stok.</CardDescription></CardHeader><CardContent className="p-0"><Table><TableHeader><TableRow><TableHead>SKU</TableHead><TableHead>Channel</TableHead><TableHead>Harga</TableHead><TableHead>Min. margin</TableHead><TableHead>Status</TableHead></TableRow></TableHeader><TableBody>{sellingPrices.map((rule) => <TableRow key={rule.id}><TableCell className="font-semibold text-foreground">{rule.sku}</TableCell><TableCell>{rule.channel}</TableCell><TableCell>{money(rule.amount)}</TableCell><TableCell>{rule.minimumMargin}%</TableCell><TableCell><Badge variant="outline" className="border-[#e8cf7d] bg-secondary text-[#8b6d13]">{rule.status}</Badge></TableCell></TableRow>)}</TableBody></Table></CardContent></Card></div><Card><CardHeader><CardTitle>Product aktif</CardTitle><CardDescription>HPP aktif berasal dari versi biaya yang sudah disetujui.</CardDescription></CardHeader><CardContent className="p-0"><Table><TableHeader><TableRow><TableHead>SKU</TableHead><TableHead>Product</TableHead><TableHead>Identifier</TableHead><TableHead>HPP aktif</TableHead><TableHead>Status</TableHead></TableRow></TableHeader><TableBody>{products.map((product) => <TableRow key={product.sku}><TableCell className="font-semibold text-foreground">{product.sku}</TableCell><TableCell>{product.name}<div className="text-xs text-muted-foreground">{product.category}</div></TableCell><TableCell>{product.identifier}</TableCell><TableCell>{money(product.hpp)}</TableCell><TableCell><Badge variant="outline" className={product.status === "Active" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-border bg-muted text-muted-foreground"}>{product.status}</Badge></TableCell></TableRow>)}</TableBody></Table></CardContent></Card><Card><CardHeader><CardTitle>Histori HPP</CardTitle><CardDescription>Perubahan HPP dilakukan dengan membuat versi baru.</CardDescription></CardHeader><CardContent className="grid gap-3 md:grid-cols-2">{productCosts.map((cost) => <div className="rounded-xl border border-border p-4" key={cost.id}><div className="flex items-center justify-between"><p className="font-semibold text-foreground">{cost.sku}</p><Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">{cost.status}</Badge></div><p className="mt-2 text-sm text-muted-foreground">{money(cost.amount)} · {cost.source} · berlaku {cost.effectiveFrom}</p></div>)}</CardContent></Card></div>;
+}

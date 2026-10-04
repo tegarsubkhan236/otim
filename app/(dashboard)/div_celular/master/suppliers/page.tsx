@@ -1,0 +1,4 @@
+import { CellularDataPage } from "@/app/_components/cellular-data-page";
+import { CellularForm } from "@/app/_components/cellular-form";
+import { cellularSuppliers } from "@/app/_data/cellular-dummy-data";
+export default function CellularSuppliersPage() { return <CellularDataPage eyebrow="Selular / Master / Suppliers" title="Suppliers" description="Kelola supplier device, SIM, dan accessory OTIM." stats={[{ label: "Supplier aktif", value: "18", detail: "Partner terverifikasi" }, { label: "PO bulan ini", value: "32", detail: "Dari semua supplier" }, { label: "Lead time rata-rata", value: "4,2 hari", detail: "Berdasarkan dummy data" }]} rows={cellularSuppliers.map((supplier) => ({ primary: supplier.name, secondary: `${supplier.contact} · ${supplier.phone}`, value: supplier.status, status: supplier.status }))}><CellularForm kind="supplier" /></CellularDataPage>; }

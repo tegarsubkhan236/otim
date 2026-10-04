@@ -1,0 +1,4 @@
+import { CellularDataPage } from "@/app/_components/cellular-data-page";
+import { CellularForm } from "@/app/_components/cellular-form";
+import { stockTransfers } from "@/app/_data/cellular-dummy-data";
+export default function CellularDistributionPage() { return <CellularDataPage eyebrow="Selular / Inventory / Distribution" title="Distribution" description="Bagikan stok langsung dari warehouse ke outlet atau sales." stats={[{ label: "Transfer aktif", value: "8", detail: "Outlet dan sales" }, { label: "In transit", value: "3", detail: "Menunggu diterima" }, { label: "Received", value: "42", detail: "Bulan berjalan" }]} rows={stockTransfers.map((transfer) => ({ primary: transfer.id, secondary: `${transfer.destinationType} · ${transfer.destination}`, value: `${transfer.quantity} unit · ${transfer.item}`, status: transfer.status }))}><CellularForm kind="distribution" /></CellularDataPage>; }
